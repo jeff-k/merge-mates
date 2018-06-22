@@ -1,0 +1,8 @@
+[package]
+name = "merge-mates"
+version = "0.1.0"
+authors = ["jeff-k <jeff_k@fastmail.com>"]
+
+[dependencies]
+bio = { git = "https://github.com/jeff-k/rust-bio.git" }
+clap = "2.31.2"
