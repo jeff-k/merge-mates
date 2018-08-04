@@ -3,7 +3,7 @@ extern crate clap;
 
 use bio::alphabets::dna;
 use bio::io::fastq::{Reader, Writer, Record};
-use bio::pattern_matching::mating::{mate, merge};
+use bio::pattern_matching::mating::{mate, merge, truncate};
 
 use clap::{Arg, App};
 
@@ -93,12 +93,27 @@ fn main() {
 fn merge_records(r1: &Record, r2: &Record) -> Option<Record> {
     let r2_rc = dna::revcomp(r2.seq());
 
-    match mate(&r1.seq(), &r2_rc, 75, 75) {
+    match mate(&r1.seq(), &r2_rc, 25, 25) {
         Some(overlap) => {
             let seq = merge(&r1.seq(), &r2_rc, overlap);
             let qual = merge(&r1.qual(), &r2.qual(), overlap);
             Some(Record::with_attrs(r1.id(), None, &seq, &qual))
         },
+        None => {
+            merge_fragment(r1, r2)
+        },
+    }
+}
+
+fn merge_fragment(r1: &Record, r2: &Record) -> Option<Record> {
+    let r2_rc = dna::revcomp(r2.seq());
+
+    match mate(&r1.seq(), &r2_rc, 25, 25) {
+        Some(overlap) => {
+            let seq = truncate(&r1.seq(), &r2_rc, overlap);
+            let qual = truncate(&r1.qual(), &r2.qual(), overlap);
+            Some(Record::with_attrs(r1.id(), None, &seq, &qual))
+        }
         None => None,
     }
 }
