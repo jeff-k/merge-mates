@@ -92,6 +92,7 @@ fn main() {
 
 fn merge_records(r1: &Record, r2: &Record) -> Option<Record> {
     let r2_rc = dna::revcomp(r2.seq());
+    let r1_rc = dna::revcomp(r1.seq());
 
     match mate(&r1.seq(), &r2_rc, 25, 25) {
         Some(overlap) => {
@@ -100,20 +101,14 @@ fn merge_records(r1: &Record, r2: &Record) -> Option<Record> {
             Some(Record::with_attrs(r1.id(), None, &seq, &qual))
         },
         None => {
-            merge_fragment(r1, r2)
+            match mate(&r1_rc, &r2.seq(), 25, 25) {
+                Some(overlap) => {
+                    let seq = truncate(&r1.seq(), &r2_rc, overlap);
+                    let qual = truncate(&r1.qual(), &r2.qual(), overlap);
+                    Some(Record::with_attrs(r1.id(), None, &seq, &qual))
+                }
+                None => None,
+            }
         },
-    }
-}
-
-fn merge_fragment(r1: &Record, r2: &Record) -> Option<Record> {
-    let r2_rc = dna::revcomp(r2.seq());
-
-    match mate(&r1.seq(), &r2_rc, 25, 25) {
-        Some(overlap) => {
-            let seq = truncate(&r1.seq(), &r2_rc, overlap);
-            let qual = truncate(&r1.qual(), &r2.qual(), overlap);
-            Some(Record::with_attrs(r1.id(), None, &seq, &qual))
-        }
-        None => None,
     }
 }
