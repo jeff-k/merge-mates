@@ -22,35 +22,30 @@ fn main() {
                 .help("Forward read")
                 .required(true)
                 .index(1),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("R2")
                 .help("Reverse read")
                 .required(true)
                 .index(2),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("out")
                 .short("o")
                 .long("out")
                 .value_name("FILE")
                 .help("Write to fastq file instead of STDOUT")
                 .takes_value(true),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("prefix")
                 .short("p")
                 .long("prefix")
                 .value_name("PREFIX")
                 .help("Write unmerged reads to paired fastq files at PREFIX-Rx.fq"),
-        )
-        .arg(
+        ).arg(
             Arg::with_name("stats")
                 .short("s")
                 .long("stats")
                 .help("Print merge statistics to STDERR when done"),
-        )
-        .get_matches();
+        ).get_matches();
 
     let r1_path = args.value_of("R1").unwrap();
     let r2_path = args.value_of("R2").unwrap();
