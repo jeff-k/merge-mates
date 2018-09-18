@@ -61,15 +61,11 @@ fn main() {
         None => Box::new(io::stdout()), // output to STDOUT
     };
 
-    let unmerged_handles: Option<(Write, Write)> = match args.value_of("prefix") {
-        Some(fp) => {
-            let path_f = Path::new(fp + ".unmerged.fq");
-            let path_r = Path::new(fp + ".unmerged.fq");
-            Some((
-                File::create(&path_f).unwrap(),
-                File::create(&path_r).unwrap(),
-            )) as Option<(Write, Write)>
-        }
+    let unmerged_handles: Option<(Box<Write>, Box<Write>)> = match args.value_of("prefix") {
+        Some(fp) => Some((
+            Box::new(File::create(&format!("{}-R1.unmerged.fq", fp)).unwrap()),
+            Box::new(File::create(&format!("{}-R2.unmerged.fq", fp)).unwrap()),
+        )),
         None => None,
     };
 
@@ -77,9 +73,6 @@ fn main() {
     let mates2 = Reader::new(r2).records();
 
     let mut merged = Writer::new(out_handle);
-
-    //    let mut unmerged_f = Writer::new(unmerged_handle_f);
-    //    let mut unmerged_r = Writer::new(unmerged_handle_r);
 
     let mut lengths = vec![0; 502];
     let mut total_frags: usize = 0;
