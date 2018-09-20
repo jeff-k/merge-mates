@@ -1,16 +1,39 @@
 extern crate bio;
 extern crate clap;
+extern crate flate2;
 
 use bio::alphabets::dna;
 use bio::io::fastq::{Reader, Record, Writer};
 use bio::pattern_matching::mating::{mate, merge, truncate};
 
-use clap::{App, Arg};
+use clap::{App, Arg, ArgMatches};
+
+use flate2::bufread::MultiGzDecoder;
 
 use std::fs::File;
 
-use std::io::{self, Write};
+use std::io::{self, BufReader, Write};
 use std::path::Path;
+
+fn open_pair(
+    r1_path: &str,
+    r2_path: &str,
+    gzip: bool,
+) -> (Box<::std::io::Read>, Box<::std::io::Read>) {
+    let (r1_b, r2_b) = (
+        BufReader::new(File::open(r1_path).unwrap()),
+        BufReader::new(File::open(r2_path).unwrap()),
+    );
+
+    if gzip {
+        (
+            Box::new(MultiGzDecoder::new(r1_b)),
+            Box::new(MultiGzDecoder::new(r2_b)),
+        )
+    } else {
+        (Box::new(r1_b), Box::new(r2_b))
+    }
+}
 
 fn main() {
     let args = App::new("merge-reads")
@@ -41,16 +64,16 @@ fn main() {
                 .value_name("PREFIX")
                 .help("Write unmerged reads to paired fastq files at PREFIX-Rx.fq"),
         ).arg(
+            Arg::with_name("gzip")
+                .short("g")
+                .long("gzip")
+                .help("Input streams are gzipped"),
+        ).arg(
             Arg::with_name("stats")
                 .short("s")
                 .long("stats")
                 .help("Print merge statistics to STDERR when done"),
         ).get_matches();
-
-    let r1_path = args.value_of("R1").unwrap();
-    let r2_path = args.value_of("R2").unwrap();
-    let r1 = File::open(r1_path).unwrap();
-    let r2 = File::open(r2_path).unwrap();
 
     // open output file handle
     let out_handle: Box<Write> = match args.value_of("out") {
@@ -69,6 +92,12 @@ fn main() {
         None => None,
     };
 
+    //    args.value_of("R1").unwrap();
+    let (r1, r2) = open_pair(
+        args.value_of("R1").unwrap(),
+        args.value_of("R2").unwrap(),
+        args.is_present("gzip"),
+    );
     let mates1 = Reader::new(r1).records();
     let mates2 = Reader::new(r2).records();
 
