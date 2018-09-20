@@ -6,3 +6,4 @@ authors = ["jeff-k <jeff_k@fastmail.com>"]
 [dependencies]
 bio = { git = "https://github.com/jeff-k/rust-bio.git", branch = "mate-reads" }
 clap = "2.31.2"
+flate2 = "1.0.2"
