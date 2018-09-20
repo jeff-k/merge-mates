@@ -25,7 +25,7 @@ fn open_pair(
         BufReader::new(File::open(r2_path).unwrap()),
     );
 
-    if gzip {
+    if gzip || (r1_path.ends_with(".gz") && r2_path.ends_with(".gz")) {
         (
             Box::new(MultiGzDecoder::new(r1_b)),
             Box::new(MultiGzDecoder::new(r2_b)),
