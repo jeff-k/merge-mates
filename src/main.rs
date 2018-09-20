@@ -73,6 +73,10 @@ fn main() {
                 .short("s")
                 .long("stats")
                 .help("Print merge statistics to STDERR when done"),
+        ).arg(
+            Arg::with_name("csv")
+                .long("csv")
+                .help("dump fragment length counts as comma separated values"),
         ).get_matches();
 
     // open output file handle
@@ -126,6 +130,9 @@ fn main() {
             total_frags, total_merged
         );
         eprintln!("{:?}", lengths);
+    }
+    if args.is_present("csv") {
+        println!("{},{},{:?}", total_frags, total_merged, lengths);
     }
 }
 
