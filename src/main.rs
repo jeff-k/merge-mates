@@ -76,7 +76,7 @@ fn main() {
         ).arg(
             Arg::with_name("csv")
                 .long("csv")
-                .help("dump fragment length counts as comma separated values"),
+                .help("dump fragment length counts as comma separated values EXPERIMENTAL"),
         ).get_matches();
 
     // open output file handle
