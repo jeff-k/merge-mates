@@ -4,7 +4,9 @@ extern crate flate2;
 
 use bio::alphabets::dna;
 use bio::io::fastq::{Reader, Record, Writer};
-use bio::pattern_matching::mating::{mate, merge, truncate};
+
+mod mating;
+use mating::{mate, merge, truncate};
 
 use clap::{App, Arg, ArgMatches};
 
@@ -57,6 +59,11 @@ fn main() {
                 .value_name("FILE")
                 .help("Write to fastq file instead of STDOUT")
                 .takes_value(true),
+        ).arg(
+            Arg::with_name("filtermode")
+                .long("fr")
+                .value_name("FILTERMODE")
+                .help("do not join reads, just write reads that do merge into interleaved fastq"),
         ).arg(
             Arg::with_name("prefix")
                 .short("p")
