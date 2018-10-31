@@ -44,6 +44,7 @@ pub fn mate(r1: &[u8], r2: &[u8], overlap_bound: usize, min_score: i16) -> Optio
 }
 
 /// Mating with the Hamming rate objective function. Complexity: O(n^2).
+#[allow(dead_code)]
 pub fn mate_hamming_rate(
     r1: &[u8],
     r2: &[u8],

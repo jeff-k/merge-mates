@@ -8,7 +8,7 @@ use bio::io::fastq::{Reader, Record, Writer};
 mod mating;
 use mating::{mate, merge, truncate};
 
-use clap::{App, Arg, ArgMatches};
+use clap::{App, Arg};
 
 use flate2::bufread::MultiGzDecoder;
 
@@ -95,7 +95,7 @@ fn main() {
         None => Box::new(io::stdout()), // output to STDOUT
     };
 
-    let unmerged_handles: Option<(Box<Write>, Box<Write>)> = match args.value_of("prefix") {
+    let _unmerged_handles: Option<(Box<Write>, Box<Write>)> = match args.value_of("prefix") {
         Some(fp) => Some((
             Box::new(File::create(&format!("{}-R1.unmerged.fq", fp)).unwrap()),
             Box::new(File::create(&format!("{}-R2.unmerged.fq", fp)).unwrap()),
