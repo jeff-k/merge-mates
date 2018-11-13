@@ -120,13 +120,10 @@ fn main() {
     for (r1, r2) in mates1.zip(mates2) {
         total_frags += 1;
         match (r1, r2) {
-            (Ok(x), Ok(y)) => match merge_records(&x, &y) {
-                Some(r) => {
-                    lengths[r.seq().len()] += 1;
-                    merged.write_record(&r).unwrap();
-                    total_merged += 1;
-                }
-                None => (),
+            (Ok(x), Ok(y)) => if let Some(r) = merge_records(&x, &y) {
+                lengths[r.seq().len()] += 1;
+                merged.write_record(&r).unwrap();
+                total_merged += 1;
             },
             _ => eprintln!("unsynced fastqs"),
         }

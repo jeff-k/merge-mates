@@ -75,9 +75,9 @@ fn score(r1: &[u8], r2: &[u8]) -> i16 {
     let len = r1.len();
     for i in 0..len {
         if r1[i] == r2[i] {
-            s = s + 1;
+            s += 1;
         } else {
-            s = s - 1;
+            s -= 1;
         }
     }
     s
