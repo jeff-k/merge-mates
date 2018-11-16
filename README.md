@@ -11,6 +11,8 @@ merge-mates -f sample-r1.fastq -r sample-r2.fastq -o output_prefix
 
 ### Mating
 
+![partially overlapping reads](overlap.png)
+
 Mating determines the position within the read that optimally represents
 overlap, if it exists. There are three possible conditions:
 
