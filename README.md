@@ -11,13 +11,18 @@ merge-mates sample-r1.fastq sample-r2.fastq -o output_prefix
 
 ### Mating
 
-
 Mating determines the position within the read that optimally represents
 overlap, if it exists. There are three possible conditions:
 
-* Overlap ![partially overlapping reads](doc/overlap.png)
-* Read-through ![read-through reads](doc/readthru.png)
-* Non-overlap ![non-overlapping reads](doc/noverlap.png)
+* **Overlap**, where the fragment size is less than twice the read length.
+  These reads can be mated into a single fragment.
+  ![partially overlapping reads](doc/overlap.png)
+* **Read-through**, when the fragment size is less than the read length.
+  In these cases overhanging bases on the 3' ends will not be meaningful.
+  ![read-through reads](doc/readthru.png)
+* **Non-overlap**, where the fragment is size is greater than the read
+  length. These reads cannot be mated. 
+  ![non-overlapping reads](doc/noverlap.png)
 
 These conditions are represented with a signed Option type (negative
 overlap represents read-through).
