@@ -1,6 +1,6 @@
 # merge-mates
 
-![partially overlapping reads](doc/overlap.png)
+![overlap with read-through](doc/readthru.png)
 
 Merge mated read pairs from next-generation sequencing data using
 a _semiglobal_ overlap alignment without gap penalties.
