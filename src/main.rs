@@ -117,15 +117,32 @@ fn main() {
     let mut lengths = vec![0; 502];
     let mut total_frags: usize = 0;
     let mut total_merged = 0;
-    for (r1, r2) in mates1.zip(mates2) {
-        total_frags += 1;
-        match (r1, r2) {
-            (Ok(x), Ok(y)) => if let Some(r) = merge_records(&x, &y) {
-                lengths[r.seq().len()] += 1;
-                merged.write_record(&r).unwrap();
-                total_merged += 1;
-            },
-            _ => eprintln!("unsynced fastqs"),
+
+    if args.is_present("fr") {
+        for (r1, r2) in mates1.zip(mates2) {
+            total_frags += 1;
+            match (r1, r2) {
+                (Ok(x), Ok(y)) => if let Some((r1, r2)) = interleave_records(&x, &y) {
+                    lengths[r1.seq().len()] += 1;
+                    lengths[r2.seq().len()] += 1;
+                    merged.write_record(&r1).unwrap();
+                    merged.write_record(&r2).unwrap();
+                    total_merged += 2;
+                },
+                _ => eprintln!("unsynced fastqs"),
+            }
+        }
+    } else {
+        for (r1, r2) in mates1.zip(mates2) {
+            total_frags += 1;
+            match (r1, r2) {
+                (Ok(x), Ok(y)) => if let Some(r) = merge_records(&x, &y) {
+                    lengths[r.seq().len()] += 1;
+                    merged.write_record(&r).unwrap();
+                    total_merged += 1;
+                },
+                _ => eprintln!("unsynced fastqs"),
+            }
         }
     }
     if args.is_present("stats") {
@@ -155,6 +172,37 @@ fn merge_records(r1: &Record, r2: &Record) -> Option<Record> {
                 let seq = truncate(&r1.seq(), &r2_rc, overlap);
                 let qual = truncate(&r1.qual(), &r2.qual(), overlap);
                 Some(Record::with_attrs(r1.id(), None, &seq, &qual))
+            }
+            None => None,
+        },
+    }
+}
+
+fn interleave_records(r1: &Record, r2: &Record) -> Option<(Record, Record)> {
+    let r2_rc = dna::revcomp(r2.seq());
+    let r1_rc = dna::revcomp(r1.seq());
+
+    match mate(&r1.seq(), &r2_rc, 25, 20) {
+
+        // overlap
+        Some(overlap) => {
+            Some((
+                Record::with_attrs(r1.id(), None, &r1.seq(), &r1.qual()),
+                Record::with_attrs(r2.id(), None, &r2.seq(), &r2.qual()))
+                )
+        }
+
+        // read-through
+        None => match mate(&r1_rc, &r2.seq(), 25, 20) {
+            Some(overlap) => {
+                let seq = truncate(&r1.seq(), &r2_rc, overlap);
+                let qual_rc = truncate(&r2.qual(), &r1.qual(), overlap);
+                let qual = truncate(&r1.qual(), &r2.qual(), overlap);
+                let seq_rc = dna::revcomp(&seq);
+                Some((
+                    Record::with_attrs(r1.id(), None, &seq, &qual),
+                    Record::with_attrs(r2.id(), None, &seq_rc, &qual_rc))
+                    )
             }
             None => None,
         },
