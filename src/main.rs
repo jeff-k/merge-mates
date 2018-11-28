@@ -183,14 +183,11 @@ fn interleave_records(r1: &Record, r2: &Record) -> Option<(Record, Record)> {
     let r1_rc = dna::revcomp(r1.seq());
 
     match mate(&r1.seq(), &r2_rc, 25, 20) {
-
         // overlap
-        Some(overlap) => {
-            Some((
-                Record::with_attrs(r1.id(), None, &r1.seq(), &r1.qual()),
-                Record::with_attrs(r2.id(), None, &r2.seq(), &r2.qual()))
-                )
-        }
+        Some(overlap) => Some((
+            Record::with_attrs(r1.id(), None, &r1.seq(), &r1.qual()),
+            Record::with_attrs(r2.id(), None, &r2.seq(), &r2.qual()),
+        )),
 
         // read-through
         None => match mate(&r1_rc, &r2.seq(), 25, 20) {
@@ -201,8 +198,8 @@ fn interleave_records(r1: &Record, r2: &Record) -> Option<(Record, Record)> {
                 let seq_rc = dna::revcomp(&seq);
                 Some((
                     Record::with_attrs(r1.id(), None, &seq, &qual),
-                    Record::with_attrs(r2.id(), None, &seq_rc, &qual_rc))
-                    )
+                    Record::with_attrs(r2.id(), None, &seq_rc, &qual_rc),
+                ))
             }
             None => None,
         },
