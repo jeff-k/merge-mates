@@ -60,9 +60,8 @@ fn main() {
                 .help("Write to fastq file instead of STDOUT")
                 .takes_value(true),
         ).arg(
-            Arg::with_name("filtermode")
-                .long("fr")
-                .value_name("FILTERMODE")
+            Arg::with_name("interleave")
+                .long("interleave")
                 .help("do not join reads, just write reads that do merge into interleaved fastq"),
         ).arg(
             Arg::with_name("prefix")
@@ -118,7 +117,7 @@ fn main() {
     let mut total_frags: usize = 0;
     let mut total_merged = 0;
 
-    if args.is_present("fr") {
+    if args.is_present("interleave") {
         for (r1, r2) in mates1.zip(mates2) {
             total_frags += 1;
             match (r1, r2) {
