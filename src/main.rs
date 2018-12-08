@@ -47,43 +47,51 @@ fn main() {
                 .help("Forward read")
                 .required(true)
                 .index(1),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("R2")
                 .help("Reverse read")
                 .required(true)
                 .index(2),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("out")
                 .short("o")
                 .long("out")
                 .value_name("FILE")
                 .help("Write to fastq file instead of STDOUT")
                 .takes_value(true),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("interleave")
                 .long("interleave")
                 .help("do not join reads, just write reads that do merge into interleaved fastq"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("prefix")
                 .short("p")
                 .long("prefix")
                 .value_name("PREFIX")
                 .help("Write unmerged reads to paired fastq files at PREFIX-Rx.fq"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("gzip")
                 .short("g")
                 .long("gzip")
                 .help("Input streams are gzipped"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("stats")
                 .short("s")
                 .long("stats")
                 .help("Print merge statistics to STDERR when done"),
-        ).arg(
+        )
+        .arg(
             Arg::with_name("csv")
                 .long("csv")
                 .help("dump fragment length counts as comma separated values EXPERIMENTAL"),
-        ).get_matches();
+        )
+        .get_matches();
 
     // open output file handle
     let out_handle: Box<Write> = match args.value_of("out") {
@@ -121,13 +129,15 @@ fn main() {
         for (r1, r2) in mates1.zip(mates2) {
             total_frags += 1;
             match (r1, r2) {
-                (Ok(x), Ok(y)) => if let Some((r1, r2)) = interleave_records(&x, &y) {
-                    lengths[r1.seq().len()] += 1;
-                    lengths[r2.seq().len()] += 1;
-                    merged.write_record(&r1).unwrap();
-                    merged.write_record(&r2).unwrap();
-                    total_merged += 2;
-                },
+                (Ok(x), Ok(y)) => {
+                    if let Some((r1, r2)) = interleave_records(&x, &y) {
+                        lengths[r1.seq().len()] += 1;
+                        lengths[r2.seq().len()] += 1;
+                        merged.write_record(&r1).unwrap();
+                        merged.write_record(&r2).unwrap();
+                        total_merged += 2;
+                    }
+                }
                 _ => eprintln!("unsynced fastqs"),
             }
         }
@@ -135,11 +145,13 @@ fn main() {
         for (r1, r2) in mates1.zip(mates2) {
             total_frags += 1;
             match (r1, r2) {
-                (Ok(x), Ok(y)) => if let Some(r) = merge_records(&x, &y) {
-                    lengths[r.seq().len()] += 1;
-                    merged.write_record(&r).unwrap();
-                    total_merged += 1;
-                },
+                (Ok(x), Ok(y)) => {
+                    if let Some(r) = merge_records(&x, &y) {
+                        lengths[r.seq().len()] += 1;
+                        merged.write_record(&r).unwrap();
+                        total_merged += 1;
+                    }
+                }
                 _ => eprintln!("unsynced fastqs"),
             }
         }
@@ -183,7 +195,7 @@ fn interleave_records(r1: &Record, r2: &Record) -> Option<(Record, Record)> {
 
     match mate(&r1.seq(), &r2_rc, 25, 20) {
         // overlap
-        Some(overlap) => Some((
+        Some(_overlap) => Some((
             Record::with_attrs(r1.id(), None, &r1.seq(), &r1.qual()),
             Record::with_attrs(r2.id(), None, &r2.seq(), &r2.qual()),
         )),

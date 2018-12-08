@@ -26,7 +26,7 @@ use std::cmp;
 
 /// Determine the index of overlap for two reads.
 pub fn mate(r1: &[u8], r2: &[u8], overlap_bound: usize, min_score: i16) -> Option<usize> {
-    let max_overlap = cmp::min(r1.len(), r2.len());
+    let max_overlap = cmp::min(r1.len(), r2.len()) + 1;
     let min_overlap = overlap_bound - 1;
     let mut m: i16 = 0;
     let mut overlap: usize = 0;
@@ -130,6 +130,14 @@ mod tests {
         let r2 = b"ttcgattacgt";
         let offset = mate(r1, r2, 3, 3).unwrap();
         assert_eq!(offset, 6);
+    }
+
+    #[test]
+    fn test_total_overlap() {
+        let r1 = b"asdfghjkl";
+        let r2 = b"asdfghjkl";
+        let offset = mate(r1, r2, 3, 3).unwrap();
+        assert_eq!(offset, 9);
     }
 
     #[test]
