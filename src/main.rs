@@ -6,7 +6,7 @@ use bio::alphabets::dna;
 use bio::io::fastq::{Reader, Record, Writer};
 
 mod mating;
-use mating::{mate, merge, truncate};
+use mating::{mate, mend_consensus, merge, truncate};
 
 use clap::{App, Arg};
 
@@ -16,6 +16,8 @@ use std::fs::File;
 
 use std::io::{self, BufReader, Write};
 use std::path::Path;
+
+use std::cmp;
 
 fn open_pair(
     r1_path: &str,
@@ -174,14 +176,14 @@ fn merge_records(r1: &Record, r2: &Record) -> Option<Record> {
 
     match mate(&r1.seq(), &r2_rc, 25, 20) {
         Some(overlap) => {
-            let seq = merge(&r1.seq(), &r2_rc, overlap);
-            let qual = merge(&r1.qual(), &r2.qual(), overlap);
+            let seq = merge(&r1.seq(), &r2_rc, overlap, mend_consensus);
+            let qual = merge(&r1.qual(), &r2.qual(), overlap, cmp::max);
             Some(Record::with_attrs(r1.id(), None, &seq, &qual))
         }
         None => match mate(&r1_rc, &r2.seq(), 25, 20) {
             Some(overlap) => {
-                let seq = truncate(&r1.seq(), &r2_rc, overlap);
-                let qual = truncate(&r1.qual(), &r2.qual(), overlap);
+                let seq = truncate(&r1.seq(), &r2_rc, overlap, mend_consensus);
+                let qual = truncate(&r1.qual(), &r2.qual(), overlap, cmp::max);
                 Some(Record::with_attrs(r1.id(), None, &seq, &qual))
             }
             None => None,
@@ -203,9 +205,9 @@ fn interleave_records(r1: &Record, r2: &Record) -> Option<(Record, Record)> {
         // read-through
         None => match mate(&r1_rc, &r2.seq(), 25, 20) {
             Some(overlap) => {
-                let seq = truncate(&r1.seq(), &r2_rc, overlap);
-                let qual_rc = truncate(&r2.qual(), &r1.qual(), overlap);
-                let qual = truncate(&r1.qual(), &r2.qual(), overlap);
+                let seq = truncate(&r1.seq(), &r2_rc, overlap, mend_consensus);
+                let qual_rc = truncate(&r2.qual(), &r1.qual(), overlap, cmp::max);
+                let qual = truncate(&r1.qual(), &r2.qual(), overlap, cmp::max);
                 let seq_rc = dna::revcomp(&seq);
                 Some((
                     Record::with_attrs(r1.id(), None, &seq, &qual),

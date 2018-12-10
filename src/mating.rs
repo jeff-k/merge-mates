@@ -84,7 +84,7 @@ fn score(r1: &[u8], r2: &[u8]) -> i16 {
 }
 
 /// Function that replaces disagreeing reads with 'N'.
-fn mend_consensus(a: u8, b: u8) -> u8 {
+pub fn mend_consensus(a: u8, b: u8) -> u8 {
     if a == b {
         a
     } else {
@@ -93,7 +93,7 @@ fn mend_consensus(a: u8, b: u8) -> u8 {
 }
 
 /// Given two reads and the index of overlap, merge them together.
-pub fn merge(r1: &[u8], r2: &[u8], overlap: usize) -> Vec<u8> {
+pub fn merge(r1: &[u8], r2: &[u8], overlap: usize, mend: fn(u8, u8) -> u8) -> Vec<u8> {
     let r1_end = r1.len() - overlap;
     let r2_end = r2.len() - overlap;
     let len = r1_end + overlap + r2_end;
@@ -103,26 +103,26 @@ pub fn merge(r1: &[u8], r2: &[u8], overlap: usize) -> Vec<u8> {
 
     // decide what to do for the overlapping part
     for i in 0..overlap {
-        seq[r1_end + i] = mend_consensus(r1[r1_end + i], r2[i]);
+        seq[r1_end + i] = mend(r1[r1_end + i], r2[i]);
     }
     seq[(r1_end + overlap)..len].copy_from_slice(&r2[overlap..r2.len()]);
     seq
 }
 
 /// Mend and return the overlapping region of two reads, given an index of overlap.
-pub fn truncate(r1: &[u8], r2: &[u8], overlap: usize) -> Vec<u8> {
+pub fn truncate(r1: &[u8], r2: &[u8], overlap: usize, mend: fn(u8, u8) -> u8) -> Vec<u8> {
     let r2_end = r2.len();
 
     let mut seq = vec![0; overlap];
     for i in 0..overlap {
-        seq[(overlap - i) - 1] = mend_consensus(r1[(overlap - i) - 1], r2[(r2_end - i) - 1]);
+        seq[(overlap - i) - 1] = mend(r1[(overlap - i) - 1], r2[(r2_end - i) - 1]);
     }
     seq
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{mate, merge, truncate};
+    use super::{mate, mend_consensus, merge, truncate};
 
     #[test]
     fn test_mate_pair() {
@@ -144,7 +144,7 @@ mod tests {
     fn test_merge_pair() {
         let r1 = b"tacgattcgat";
         let r2 = b"ttcgattacgt";
-        assert_eq!(merge(r1, r2, 6), b"tacgattcgattacgt");
+        assert_eq!(merge(r1, r2, 6, mend_consensus), b"tacgattcgattacgt");
     }
 
     #[test]
@@ -153,7 +153,10 @@ mod tests {
         let r2 = b"gtttaccatgatggattga";
         let offset = mate(r1, r2, 3, 3).unwrap();
         assert_eq!(offset, 13);
-        assert_eq!(merge(r1, r2, offset), b"actgtagtNNaccatgatggattga");
+        assert_eq!(
+            merge(r1, r2, offset, mend_consensus),
+            b"actgtagtNNaccatgatggattga"
+        );
     }
 
     #[test]
@@ -176,7 +179,7 @@ mod tests {
     fn test_truncation() {
         let r1 = b"cgctgtcatgc";
         let r2 = b"tcatgccgctgt";
-        assert_eq!(truncate(r1, r2, 6), b"cgctgt");
+        assert_eq!(truncate(r1, r2, 6, mend_consensus), b"cgctgt");
     }
 
     #[test]

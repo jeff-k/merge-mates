@@ -1,9 +1,9 @@
 [package]
 name = "merge-mates"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["jeff-k <jeff_k@fastmail.com>"]
 
 [dependencies]
-bio = "0.20"
-clap = "2.31"
-flate2 = "1.0"
+bio = "^0"
+clap = "^2"
+flate2 = "^1"
