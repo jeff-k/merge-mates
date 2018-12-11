@@ -30,24 +30,24 @@ overlap represents read-through).
 
 Merging two overlapping reads requires a strategy to mend their
 disagreements. For next-gen data, there will also be quality strings to
-merge.
+merge. The default solution is to replace mismatched base pairs with an
+'N' and choosing the greatest of the Phred quality scores.
 
 ## Application Notes
 
 ### Reporting and QC
 
-merge-mates may be run with the `-s` switch to additionally output summary
-statistics to stderr.
-
-TODO: output summary of adapter sequences left over from read through
-reads.
+merge-mates may be run with the `--stats` flag to additionally output
+summary statistics to stderr. The `--prefix` option may be used to collect
+infortmation about pairs that were not mated.
 
 ### Platform dependent options
 
 The utility of merge-mates increases with read length. 150bp paired end
 reads will not produce interesting results.
 
-TODO: allow manual configuration of read direction.
+Currently, all of the second reads are treated as reverse complemented
+with respect to the first reads.
 
 ## Related tools
 
