@@ -2,8 +2,8 @@
 
 ![overlap with read-through](doc/readthru.png)
 
-Merge mated read pairs from next-generation sequencing data using
-a _semiglobal_ overlap alignment without gap penalties.
+Merge mated forward-reverse read pairs from next-generation sequencing
+data using a _semiglobal_ overlap alignment without gap penalties.
 
 ## Synopsis
 
@@ -39,15 +39,15 @@ merge. The default solution is to replace mismatched base pairs with an
 
 merge-mates may be run with the `--stats` flag to additionally output
 summary statistics to stderr. The `--prefix` option may be used to collect
-infortmation about pairs that were not mated.
+information about pairs that were not mated.
 
 ### Platform dependent options
 
 The utility of merge-mates increases with read length. 150bp paired end
 reads will not produce interesting results.
 
-Currently, all of the second reads are treated as reverse complemented
-with respect to the first reads.
+All of the second reads are treated as reverse complemented with respect
+to the first reads.
 
 ## Related tools
 
