@@ -1,8 +1,19 @@
 language: rust
+sudo: false
 cache: cargo
+matrix:
+  include:
+    - os: linux
+      rust: stable
+      env: TARGET=x86_64-unknown-linux-musl
 
 rust:
   - stable
+
+env:
+  global:
+    - HOST=x86_64-unknown-linux-gnu
+    - PROJECT_NAME=merge-mates
 
 before_script:
   - export PATH=$HOME/.cargo/bin:$PATH
@@ -10,5 +21,24 @@ before_script:
 
 script:
   - cargo fmt -- --check
-  - cargo build --verbose
-  - cargo test --verbose
+  - cargo build  --target $TARGET --verbose
+  - cargo test --target $TARGET --verbose
+
+before_deploy:
+  - name="merge-mates-$TRAVIS_TAG-$TARGET"
+  - mkdir $name
+  - cp target/$TARGET/release/merge-mates $name/
+  - cp LICENSE $name/
+  - tar cfJ $name.tar.xz $name
+
+deploy:
+  provider: releases
+  api_key:
+    secure: "RrTAk9TeAzbqRTWQBjCWAD+IXTPkyB8voy7gLw2BRZ3wkCbVkL2ZCja2FSMa6o95kUoGjJE/MnnyxyOb5S9QiPMnBiyYezsOB2iGAgR9t2ANTPk7e6yUY0pdopZef11Hwg7Cwm9tO+aj6/qA1Et0+O0iLj7SsXyYRFziT0rfKE1T3hLqvyBLeg8l3HG5xPTSjl1/4mrNdcR0L7MbV7jeqlRrLBX9Zst5AxZhxxB9LQC6AuJqh1Na/jzjXhkhb/tQqTOCHQ7490rRi2fk5UT9U+9cbfJJmWrB2CAJO6AExN2bmZI5/xhACrpskI1gn5q0Na1LaHQd8eFkEBpF1kjWQnjZeEw0/bCLEFeHN/hbWDN5k4rn0HbYl+ZP4qB5HX/CJzya2Djk3DId8uPhVfZKSV1DRRgwdUTInEWp+fRIiSkByvjOzTjVyYdiIqc4JNswW3m+ES51udkniJ9IjA8Ab17/Fd1lUupKRiKT3fwv9nBE7EjfIxPBIYOcKCwwFcnIAPtZUMkDTvv/qfFlG6VKqbgcQZngdAWrKmxtLiJBbI1gT4RcfTGHBO/0g86yd+I1JG2kLgONaKVk5U++NcoX7FpPH1mwIZye56CiJHD0ZATqPpSBEwbBItJ+zreEK68fzpKHlqD3qwfpYyqqwjsUT3ZMDfjFkl2PqYglSY/3c5A="
+  file_glob: true
+  file:
+    - $PROJECT_NAME-$TRAVIS_TAG-$TARGET.tar.xz
+  skip_cleanup: true
+  on:
+    branch: master
+    tags: true
