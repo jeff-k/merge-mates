@@ -1,6 +1,5 @@
 # merge-mates
-
-[![Build Status](https://travis-ci.com/jeff-k/merge-mates.svg?branch=master)](https://travis-ci.com/jeff-k/merge-mates)
+[![Build Status](https://travis-ci.org/jeff-k/merge-mates.svg?branch=master)](https://travis-ci.org/jeff-k/merge-mates)
 
 ![overlap with read-through](doc/readthru.png)
 
