@@ -41,7 +41,7 @@ fn open_pair(
 
 fn main() {
     let args = App::new("merge-mates")
-        .version("0.2")
+        .version("0.2.1a")
         .about("Merge paired Illumina reads")
         .author("jeff-k <jeff_k@fastmail.com>")
         .arg(
