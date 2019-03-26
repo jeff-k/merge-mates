@@ -1,6 +1,6 @@
 [package]
 name = "merge-mates"
-version = "0.2.1a"
+version = "0.2.1-alpha"
 authors = ["jeff-k <jeff_k@fastmail.com>"]
 
 [dependencies]
