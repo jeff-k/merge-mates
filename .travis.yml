@@ -12,7 +12,7 @@ rust:
 
 env:
   global:
-    - HOST=x86_64-unknown-linux-gnu
+    - TARGET=x86_64-unknown-linux-gnu
     - PROJECT_NAME=merge-mates
 
 before_script:
@@ -21,15 +21,15 @@ before_script:
 
 script:
   - cargo fmt -- --check
-  - cargo build  --target $TARGET --verbose
   - cargo test --target $TARGET --verbose
+  - cargo build --release --target $TARGET --verbose
 
 before_deploy:
-  - name="merge-mates-$TRAVIS_TAG-$TARGET"
-  - mkdir $name
-  - cp target/$TARGET/release/merge-mates $name/
-  - cp LICENSE $name/
-  - tar cfJ $name.tar.xz $name
+  - BUILD_DIR="$PROJECT_NAME-$TRAVIS_TAG-$TARGET"
+  - mkdir $BUILD_DIR
+  - cp target/$TARGET/release/merge-mates $BUILD_DIR/
+  - cp LICENSE $BUILD_DIR/
+  - tar cfJ $BUILD_DIR.tar.xz $BUILD_DIR
 
 deploy:
   provider: releases
