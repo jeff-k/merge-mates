@@ -1,1 +1,11 @@
 language: rust
+
+rust:
+  - stable
+
+sudo: false
+
+script:
+  - cargo fmt -- --check
+  - cargo build
+  - cargo test 
