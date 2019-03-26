@@ -1,5 +1,7 @@
 # merge-mates
 
+[![Build Status](https://travis-ci.com/jeff-k/merge-mates.svg?branch=master)](https://travis-ci.com/jeff-k/merge-mates)
+
 ![overlap with read-through](doc/readthru.png)
 
 Merge mated forward-reverse read pairs from next-generation sequencing
