@@ -27,9 +27,6 @@ before_script:
   - rustup component add rustfmt-preview
   - rustup target add $TARGET
 
-    #install:
-  #  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=$TRAVIS_RUST_VERSION
-
 script:
   - cargo fmt -- --check
   - cargo test --target $TARGET --verbose
