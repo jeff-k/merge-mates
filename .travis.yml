@@ -25,14 +25,10 @@ env:
 before_script:
   - export PATH=$HOME/.cargo/bin:$PATH
   - rustup component add rustfmt-preview
-
-before_install:
-  - export PATH=$PATH="$PATH:$HOME/.cargo/bin"
-
-install:
-  - ~/rust/lib/rustlib/uninstall.sh
-  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=$TRAVIS_RUST_VERSION
   - rustup target add $TARGET
+
+    #install:
+  #  - curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain=$TRAVIS_RUST_VERSION
 
 script:
   - cargo fmt -- --check
