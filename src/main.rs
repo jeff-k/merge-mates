@@ -23,7 +23,7 @@ fn open_pair(
     r1_path: &str,
     r2_path: &str,
     gzip: bool,
-) -> (Box<::std::io::Read>, Box<::std::io::Read>) {
+) -> (Box<dyn (::std::io::Read)>, Box<dyn (::std::io::Read)>) {
     let (r1_b, r2_b) = (
         BufReader::new(File::open(r1_path).unwrap()),
         BufReader::new(File::open(r2_path).unwrap()),
@@ -96,15 +96,16 @@ fn main() {
         .get_matches();
 
     // open output file handle
-    let out_handle: Box<Write> = match args.value_of("out") {
+    let out_handle: Box<dyn Write> = match args.value_of("out") {
         Some(fp) => {
             let path = Path::new(fp);
-            Box::new(File::create(&path).unwrap()) as Box<Write>
+            Box::new(File::create(&path).unwrap()) as Box<dyn Write>
         }
         None => Box::new(io::stdout()), // output to STDOUT
     };
 
-    let _unmerged_handles: Option<(Box<Write>, Box<Write>)> = match args.value_of("prefix") {
+    let _unmerged_handles: Option<(Box<dyn Write>, Box<dyn Write>)> = match args.value_of("prefix")
+    {
         Some(fp) => Some((
             Box::new(File::create(&format!("{}-R1.unmerged.fq", fp)).unwrap()),
             Box::new(File::create(&format!("{}-R2.unmerged.fq", fp)).unwrap()),
