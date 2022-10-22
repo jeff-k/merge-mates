@@ -1,9 +1,10 @@
 [package]
 name = "merge-mates"
-version = "0.2.1-alpha"
+version = "0.7.0"
 authors = ["jeff-k <jeff_k@fastmail.com>"]
 
 [dependencies]
-bio = "^0"
-clap = "^2"
-flate2 = "^1"
+bio-streams = { path="../bio-streams" }
+bio-seq = "^0.8"
+flate2 = "^0"
+clap = { version="^4", features=["derive"] }

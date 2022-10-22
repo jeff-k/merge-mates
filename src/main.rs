@@ -1,101 +1,41 @@
-extern crate bio;
-extern crate clap;
+extern crate bio_streams;
 extern crate flate2;
 
-use bio::alphabets::dna;
-use bio::io::fastq::{Reader, Record, Writer};
+extern crate bio_seq;
+extern crate clap;
+
+use bio_streams::fastq::{Fastq, Record};
+use std::io::{stdout, BufReader};
+
+use flate2::read::MultiGzDecoder;
+use std::fs::File;
+
+use bio_seq::codec::dna::Dna;
+use bio_seq::Seq;
+
+use clap::Parser;
+
+use std::path::{Path, PathBuf};
+
+use std::cmp;
 
 mod mating;
 use mating::{mate, mend_consensus, merge, truncate};
 
-use clap::{App, Arg};
-
-use flate2::bufread::MultiGzDecoder;
-
-use std::fs::File;
-
-use std::io::{self, BufReader, Write};
-use std::path::Path;
-
-use std::cmp;
-
-fn open_pair(
-    r1_path: &str,
-    r2_path: &str,
-    gzip: bool,
-) -> (Box<dyn (::std::io::Read)>, Box<dyn (::std::io::Read)>) {
-    let (r1_b, r2_b) = (
-        BufReader::new(File::open(r1_path).unwrap()),
-        BufReader::new(File::open(r2_path).unwrap()),
-    );
-
-    if gzip || (r1_path.ends_with(".gz") && r2_path.ends_with(".gz")) {
-        (
-            Box::new(MultiGzDecoder::new(r1_b)),
-            Box::new(MultiGzDecoder::new(r2_b)),
-        )
-    } else {
-        (Box::new(r1_b), Box::new(r2_b))
-    }
+#[derive(Parser)]
+struct Cli {
+    R1: PathBuf,
+    R2: PathBuf,
+    interleave: bool,
+    csv: bool,
+    stats: bool,
 }
 
 fn main() {
-    let args = App::new("merge-mates")
-        .version("0.2.1-alpha")
-        .about("Merge paired Illumina reads")
-        .author("jeff-k <jeff_k@fastmail.com>")
-        .arg(
-            Arg::with_name("R1")
-                .help("Forward read")
-                .required(true)
-                .index(1),
-        )
-        .arg(
-            Arg::with_name("R2")
-                .help("Reverse read")
-                .required(true)
-                .index(2),
-        )
-        .arg(
-            Arg::with_name("out")
-                .short("o")
-                .long("out")
-                .value_name("FILE")
-                .help("Write to fastq file instead of STDOUT")
-                .takes_value(true),
-        )
-        .arg(
-            Arg::with_name("interleave")
-                .long("interleave")
-                .help("do not join reads, just write reads that do merge into interleaved fastq"),
-        )
-        .arg(
-            Arg::with_name("prefix")
-                .short("p")
-                .long("prefix")
-                .value_name("PREFIX")
-                .help("Write unmerged reads to paired fastq files at PREFIX-Rx.fq"),
-        )
-        .arg(
-            Arg::with_name("gzip")
-                .short("g")
-                .long("gzip")
-                .help("Input streams are gzipped"),
-        )
-        .arg(
-            Arg::with_name("stats")
-                .short("s")
-                .long("stats")
-                .help("Print merge statistics to STDERR when done"),
-        )
-        .arg(
-            Arg::with_name("csv")
-                .long("csv")
-                .help("dump fragment length counts as comma separated values EXPERIMENTAL"),
-        )
-        .get_matches();
+    let args = Cli::parse();
 
     // open output file handle
+    /*
     let out_handle: Box<dyn Write> = match args.value_of("out") {
         Some(fp) => {
             let path = Path::new(fp);
@@ -103,7 +43,10 @@ fn main() {
         }
         None => Box::new(io::stdout()), // output to STDOUT
     };
+    */
+    let out_handle = stdout();
 
+    /*
     let _unmerged_handles: Option<(Box<dyn Write>, Box<dyn Write>)> = match args.value_of("prefix")
     {
         Some(fp) => Some((
@@ -112,79 +55,83 @@ fn main() {
         )),
         None => None,
     };
+    */
+    let fq1: Fastq<BufReader<MultiGzDecoder<File>>> = Fastq::new(BufReader::new(
+        MultiGzDecoder::new(
+            File::open(Path::new("/home/jknaggs/covid/ERR4659819_1.fastq.gz")).unwrap(),
+        )
+        .unwrap(),
+    ));
+
+    let fq2: Fastq<BufReader<MultiGzDecoder<File>>> = Fastq::new(BufReader::new(
+        MultiGzDecoder::new(
+            File::open(Path::new("/home/jknaggs/covid/ERR4659819_2.fastq.gz")).unwrap(),
+        )
+        .unwrap(),
+    ));
 
     //    args.value_of("R1").unwrap();
-    let (r1, r2) = open_pair(
-        args.value_of("R1").unwrap(),
-        args.value_of("R2").unwrap(),
-        args.is_present("gzip"),
-    );
-    let mates1 = Reader::new(r1).records();
-    let mates2 = Reader::new(r2).records();
+    let mates1: Fastq<BufReader<MultiGzDecoder<File>>, Seq<Dna>> = Fastq::new(BufReader::new(
+        MultiGzDecoder::new(File::open(&args.R1).unwrap()).unwrap(),
+    ));
 
-    let mut merged = Writer::new(out_handle);
+    let mates2: Fastq<BufReader<MultiGzDecoder<File>>, Seq<Dna>> = Fastq::new(BufReader::new(
+        MultiGzDecoder::new(File::open(&args.R2).unwrap()).unwrap(),
+    ));
 
-    let mut lengths = vec![0; 502];
+    let mut merged = out_handle;
+
+    let mut lengths = vec![0; 602];
     let mut total_frags: usize = 0;
     let mut total_merged = 0;
 
-    if args.is_present("interleave") {
+    if args.interleave {
         for (r1, r2) in mates1.zip(mates2) {
             total_frags += 1;
-            match (r1, r2) {
-                (Ok(x), Ok(y)) => {
-                    if let Some((r1, r2)) = interleave_records(&x, &y) {
-                        lengths[r1.seq().len()] += 1;
-                        lengths[r2.seq().len()] += 1;
-                        merged.write_record(&r1).unwrap();
-                        merged.write_record(&r2).unwrap();
-                        total_merged += 2;
-                    }
-                }
-                _ => eprintln!("unsynced fastqs"),
+            if let Some((r1, r2)) = interleave_records(&r1, &r2) {
+                lengths[r1.seq.len()] += 1;
+                lengths[r2.seq.len()] += 1;
+                //merged.write_record(&r1).unwrap();
+                //merged.write_record(&r2).unwrap();
+                total_merged += 2;
             }
         }
     } else {
         for (r1, r2) in mates1.zip(mates2) {
             total_frags += 1;
-            match (r1, r2) {
-                (Ok(x), Ok(y)) => {
-                    if let Some(r) = merge_records(&x, &y) {
-                        lengths[r.seq().len()] += 1;
-                        merged.write_record(&r).unwrap();
-                        total_merged += 1;
-                    }
-                }
-                _ => eprintln!("unsynced fastqs"),
+            if let Some(r) = merge_records(&r1, &r2) {
+                lengths[r.seq.len()] += 1;
+                //merged.write_record(&r).unwrap();
+                total_merged += 1;
             }
         }
     }
-    if args.is_present("stats") {
+    if args.stats {
         eprintln!(
             "Total reads:\t{0}\nMerged reads\t{1}",
             total_frags, total_merged
         );
         eprintln!("{:?}", lengths);
     }
-    if args.is_present("csv") {
+    if args.csv {
         println!("{},{},{:?}", total_frags, total_merged, lengths);
     }
 }
 
-fn merge_records(r1: &Record, r2: &Record) -> Option<Record> {
-    let r2_rc = dna::revcomp(r2.seq());
-    let r1_rc = dna::revcomp(r1.seq());
+fn merge_records(r1: &Record<Seq<Dna>>, r2: &Record<Seq<Dna>>) -> Option<Record<Seq<Dna>>> {
+    let r2_rc = r2.seq.rc();
+    let r1_rc = r1.seq.rc();
 
-    match mate(&r1.seq(), &r2_rc, 25, 20) {
+    match mate(&r1.seq, &r2_rc, 25, 20) {
         Some(overlap) => {
-            let seq = merge(&r1.seq(), &r2_rc, overlap, mend_consensus);
-            let qual = merge(&r1.qual(), &r2.qual(), overlap, cmp::max);
+            let seq = merge(&r1.seq, &r2_rc, overlap, mend_consensus);
+            let qual = merge(&r1.quality, &r2.quality, overlap, cmp::max);
             Some(Record::with_attrs(r1.id(), None, &seq, &qual))
         }
-        None => match mate(&r1_rc, &r2.seq(), 25, 20) {
+        None => match mate(&r1_rc, &r2.seq, 25, 20) {
             Some(overlap) => {
-                let seq = truncate(&r1.seq(), &r2_rc, overlap, mend_consensus);
-                let qual = truncate(&r1.qual(), &r2.qual(), overlap, cmp::max);
+                let seq = truncate(&r1.seq, &r2_rc, overlap, mend_consensus);
+                let qual = truncate(&r1.quality, &r2.quality, overlap, cmp::max);
                 Some(Record::with_attrs(r1.id(), None, &seq, &qual))
             }
             None => None,
@@ -193,23 +140,23 @@ fn merge_records(r1: &Record, r2: &Record) -> Option<Record> {
 }
 
 fn interleave_records(r1: &Record, r2: &Record) -> Option<(Record, Record)> {
-    let r2_rc = dna::revcomp(r2.seq());
-    let r1_rc = dna::revcomp(r1.seq());
+    let r2_rc = r2.seq.rc();
+    let r1_rc = r1.seq.rc();
 
-    match mate(&r1.seq(), &r2_rc, 25, 20) {
+    match mate(&r1.seq, &r2_rc, 25, 20) {
         // overlap
         Some(_overlap) => Some((
-            Record::with_attrs(r1.id(), None, &r1.seq(), &r1.qual()),
-            Record::with_attrs(r2.id(), None, &r2.seq(), &r2.qual()),
+            Record::with_attrs(r1.id(), None, &r1.seq, &r1.quality),
+            Record::with_attrs(r2.id(), None, &r2.seq, &r2.quality),
         )),
 
         // read-through
-        None => match mate(&r1_rc, &r2.seq(), 25, 20) {
+        None => match mate(&r1_rc, &r2.seq, 25, 20) {
             Some(overlap) => {
-                let seq = truncate(&r1.seq(), &r2_rc, overlap, mend_consensus);
-                let qual_rc = truncate(&r2.qual(), &r1.qual(), overlap, cmp::max);
-                let qual = truncate(&r1.qual(), &r2.qual(), overlap, cmp::max);
-                let seq_rc = dna::revcomp(&seq);
+                let seq = truncate(&r1.seq, &r2_rc, overlap, mend_consensus);
+                let qual_rc = truncate(&r2.quality, &r1.quality, overlap, cmp::max);
+                let qual = truncate(&r1.quality, &r2.quality, overlap, cmp::max);
+                let seq_rc = seq.rc();
                 Some((
                     Record::with_attrs(r1.id(), None, &seq, &qual),
                     Record::with_attrs(r2.id(), None, &seq_rc, &qual_rc),
