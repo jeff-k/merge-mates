@@ -24,7 +24,25 @@
 
 use std::cmp;
 
+#[inline]
+pub fn rc(seq: &[u8]) -> Vec<u8> {
+    let mut rev: Vec<u8> = vec![];
+
+    for b in seq.iter().rev() {
+        rev.push(match b {
+            b'A' => b'T',
+            b'C' => b'G',
+            b'G' => b'C',
+            b'T' => b'A',
+            b'N' => b'N',
+            _ => panic!(),
+        });
+    }
+    rev
+}
+
 /// Determine the index of overlap for two reads.
+#[inline]
 pub fn mate(r1: &[u8], r2: &[u8], overlap_bound: usize, min_score: i16) -> Option<usize> {
     let max_overlap = cmp::min(r1.len(), r2.len()) + 1;
     let min_overlap = overlap_bound - 1;
@@ -70,6 +88,7 @@ pub fn mate_hamming_rate(
 }
 
 /// Mating objective function that penalizes mismatches.
+#[inline]
 fn score(r1: &[u8], r2: &[u8]) -> i16 {
     let mut s: i16 = 0;
     let len = r1.len();
@@ -84,6 +103,7 @@ fn score(r1: &[u8], r2: &[u8]) -> i16 {
 }
 
 /// Function that replaces disagreeing reads with 'N'.
+#[inline]
 pub fn mend_consensus(a: u8, b: u8) -> u8 {
     if a == b {
         a
@@ -93,6 +113,7 @@ pub fn mend_consensus(a: u8, b: u8) -> u8 {
 }
 
 /// Given two reads and the index of overlap, merge them together.
+#[inline]
 pub fn merge(r1: &[u8], r2: &[u8], overlap: usize, mend: fn(u8, u8) -> u8) -> Vec<u8> {
     let r1_end = r1.len() - overlap;
     let r2_end = r2.len() - overlap;
@@ -110,6 +131,7 @@ pub fn merge(r1: &[u8], r2: &[u8], overlap: usize, mend: fn(u8, u8) -> u8) -> Ve
 }
 
 /// Mend and return the overlapping region of two reads, given an index of overlap.
+#[inline]
 pub fn truncate(r1: &[u8], r2: &[u8], overlap: usize, mend: fn(u8, u8) -> u8) -> Vec<u8> {
     let r2_end = r2.len();
 

@@ -4,7 +4,6 @@ version = "0.7.0"
 authors = ["jeff-k <jeff_k@fastmail.com>"]
 
 [dependencies]
-bio-streams = { path="../bio-streams" }
-bio-seq = "^0.8"
-flate2 = "^0"
+bio-streams = { git="https://github.com/jeff-k/bio-streams.git" }
+flate2 = "1.0"
 clap = { version="^4", features=["derive"] }
